@@ -1,0 +1,12 @@
+{
+	"name": "asciidoctor-live",
+	"version": "1.0.0",
+	"type": "module",
+	"dependencies": {
+		"core-js": "^3.6.5",
+		"express": "^4.17.1",
+		"portfinder": "^1.0.28",
+		"socket.io": "^2.3.0"
+	},
+	"devDependencies": {}
+}
