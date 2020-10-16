@@ -124,7 +124,7 @@ portfinder.getPort({ port: 7000, host: externalIp }, (err, port) => {
 	console.log(`Watching for changes in "${monitorDir}"`);
 
 	//Update all the clients when the directory updates
-	choikdar.watch(monitorDir).on('all', function (event, name) {
+	choikdar.watch(monitorDir).on('change', function (event, name) {
 		console.log(`EVENT:\t${event}\t${name}`);
 		getRenderedData((err, data) => {
 			socketIo.sockets.emit('updated', data);
