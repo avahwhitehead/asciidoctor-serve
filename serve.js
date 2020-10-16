@@ -1,4 +1,5 @@
 #!/usr/local/bin/node
+import choikdar from "chokidar";
 import express from "express";
 import fs from "fs";
 import listen from "socket.io";
@@ -82,7 +83,7 @@ portfinder.getPort({ port: 7000 }, (err, port) => {
 	app.get('/', (req, res) => res.send(RESPONSE_HTML));
 
 	//Notify all the clients when the file updates
-	fs.watch(FILE_NAME, function (event, name) {
+	choikdar.watch(path.dirname(FILE_NAME)).on('all', function (event, name) {
 		getRenderedData((err, data) => {
 			socketIo.sockets.emit('updated', data);
 			console.error(err);
