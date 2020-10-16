@@ -15,12 +15,12 @@ const FILE_NAME = args[0];
 //File name not provided
 if (!FILE_NAME) {
 	console.error("ERROR:	File name required");
-	exit(1);
+	process.exit(1);
 }
 //File does not exist
 if (!fs.existsSync(FILE_NAME)) {
 	console.error("ERROR:	File does not exist");
-	exit(1);
+	process.exit(1);
 }
 
 
