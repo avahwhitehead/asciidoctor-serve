@@ -2,6 +2,7 @@
 import choikdar from "chokidar";
 import express from "express";
 import listen from "socket.io";
+import moment from "moment";
 import os from "os";
 import path from "path";
 import portfinder from "portfinder";
@@ -52,6 +53,7 @@ const COMPILE_COMMAND = `asciidoctor ${args.join(' ')} -o -`;
 console.log(`Rendering command:\n${COMPILE_COMMAND}`);
 
 function getRenderedData(callback) {
+	console.log(`${moment().format("YYYY-MM-DD HH:mm:ss")}\t Rendering`);
 	exec(COMPILE_COMMAND, (error, stdout, stderr) => {
 		if (error) callback(error, stdout);
 		else callback(stderr, stdout);
@@ -123,6 +125,7 @@ portfinder.getPort({ port: 7000, host: externalIp }, (err, port) => {
 
 	//Update all the clients when the directory updates
 	choikdar.watch(monitorDir).on('all', function (event, name) {
+		console.log(`EVENT:\t${event}\t${name}`);
 		getRenderedData((err, data) => {
 			socketIo.sockets.emit('updated', data);
 			console.error(err);
@@ -131,6 +134,7 @@ portfinder.getPort({ port: 7000, host: externalIp }, (err, port) => {
 
 	//When a new client connects, render and send the file
 	socketIo.sockets.on('connection', function (socket) {
+		console.log(`New device connected`);
 		getRenderedData((err, data) => {
 			socket.emit('updated', data);
 			console.error(err);
