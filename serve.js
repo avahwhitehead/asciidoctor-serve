@@ -94,7 +94,7 @@ portfinder.getPort({ port: 7000, host: externalIp }, (err, port) => {
 		//Request headers to allow
 		res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
 		//Include cookies in sent requests (e.g. for sessions)
-		res.setHeader('Access-Control-Allow-Credentials', false);
+		res.setHeader('Access-Control-Allow-Credentials', 'false');
 
 		//Pass to next layer of middleware
 		next();
