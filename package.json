@@ -1,7 +1,11 @@
 {
-	"name": "asciidoctor-live",
+	"name": "asciidoctor-serve",
 	"version": "1.0.0",
 	"type": "module",
+	"main": "./serve.js",
+	"bin": {
+		"asciidoctor-serve": "./serve.js"
+	},
 	"dependencies": {
 		"chokidar": "^3.4.3",
 		"core-js": "^3.6.5",
