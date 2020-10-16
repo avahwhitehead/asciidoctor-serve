@@ -2,6 +2,7 @@
 import express from "express";
 import fs from "fs";
 import listen from "socket.io";
+import path from "path";
 import portfinder from "portfinder";
 import { exec } from "child_process";
 
@@ -23,6 +24,15 @@ if (!fs.existsSync(FILE_NAME)) {
 	process.exit(1);
 }
 
+// ================
+
+function getRenderedData(callback) {
+	let COMPILE_COMMAND = `asciidoctor -r asciidoctor-bibliography "${path.resolve(FILE_NAME)}" -o -`;
+	exec(COMPILE_COMMAND, (error, stdout, stderr) => {
+		if (error) callback(error, stdout);
+		else callback(stderr, stdout);
+	});
+}
 
 // ================
 
@@ -73,12 +83,17 @@ portfinder.getPort({ port: 7000 }, (err, port) => {
 
 	//Notify all the clients when the file updates
 	fs.watch(FILE_NAME, function (event, name) {
-		console.log(`File changed: ${name}`);
-		//Load the new data
-		fs.readFile(FILE_NAME, (err, data) => {
-			//Send the new data to the clients
-			socketIo.sockets.emit('updated', data.toString());
+		getRenderedData((err, data) => {
+			socketIo.sockets.emit('updated', data);
+			console.error(err);
 		});
 	});
+
+	socketIo.sockets.on('connection', function (socket) {
+		getRenderedData((err, data) => {
+			socket.emit('updated', data);
+			console.error(err);
+		});
+	})
 });
 
