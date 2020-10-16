@@ -71,22 +71,6 @@ portfinder.getPort({ port: 7000, host: externalIp }, (err, port) => {
 	const localAddress = `http://localhost:${port}`;
 	const externalAddress = externalIp ? `http://${externalIp}:${port}` : null;
 
-	//HTML/JS to run on the client side
-	const RESPONSE_HTML = `
-	<!--The socket.io library-->
-	<script src="/socket.io/socket.io.js"></script>
-	<script>
-		//Establish a socket connection to the server
-		const socket = io.connect('${externalAddress || localAddress}');
-		//Display the new HTML when it is received
-		socket.on('updated', function(data) {
-			document.getElementById("body").innerHTML = data;
-		});
-	</script>
-	<body id="body"></body>`;
-
-	// ================
-
 	//Create a web server to listen on the chosen port
 	const app = express();
 	const server = app.listen(port, () => {
@@ -117,7 +101,20 @@ portfinder.getPort({ port: 7000, host: externalIp }, (err, port) => {
 	});
 
 	//Return the HTML page
-	app.get('/', (req, res) => res.send(RESPONSE_HTML));
+	app.get('/', (req, res) => {
+		res.send(`
+	<!--The socket.io library-->
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		//Establish a socket connection to the server
+		const socket = io.connect('${req.headers.host}');
+		//Display the new HTML when it is received
+		socket.on('updated', function(data) {
+			document.getElementById("body").innerHTML = data;
+		});
+	</script>
+	<body id="body"></body>`)
+	});
 
 	//Directory to monitor for changes
 	let monitorDir = path.dirname(args[args.length - 1]);
