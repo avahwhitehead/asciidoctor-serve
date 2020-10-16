@@ -1,7 +1,6 @@
 #!/usr/local/bin/node
 import choikdar from "chokidar";
 import express from "express";
-import fs from "fs";
 import listen from "socket.io";
 import path from "path";
 import portfinder from "portfinder";
@@ -10,25 +9,25 @@ import { exec } from "child_process";
 // ================
 
 //Remove `node` and script name from arguments
-const args = process.argv.slice(2);
+let args = process.argv.slice(2);
 
-//Get the path to the asciidoc file
-const FILE_NAME = args[0];
-//File name not provided
-if (!FILE_NAME) {
-	console.error("ERROR:	File name required");
+//Check that at least one command line argument was provided
+if (args.length === 0) {
+	console.error("ERROR:\tNo arguments provided");
 	process.exit(1);
 }
-//File does not exist
-if (!fs.existsSync(FILE_NAME)) {
-	console.error("ERROR:	File does not exist");
-	process.exit(1);
+
+//If an output file was specified in the arguments, remove it
+let i;
+if ((i = args.indexOf("-o")) >= 0 || (i = args.indexOf("--out-file")) >= 0) {
+	args = args.splice(i, 2);
 }
 
 // ================
+const COMPILE_COMMAND = `asciidoctor ${args.join(' ')} -o -`;
+console.log(`Rendering command:\n${COMPILE_COMMAND}`);
 
 function getRenderedData(callback) {
-	let COMPILE_COMMAND = `asciidoctor -r asciidoctor-bibliography "${path.resolve(FILE_NAME)}" -o -`;
 	exec(COMPILE_COMMAND, (error, stdout, stderr) => {
 		if (error) callback(error, stdout);
 		else callback(stderr, stdout);
@@ -82,14 +81,19 @@ portfinder.getPort({ port: 7000 }, (err, port) => {
 	//Return the HTML page
 	app.get('/', (req, res) => res.send(RESPONSE_HTML));
 
-	//Notify all the clients when the file updates
-	choikdar.watch(path.dirname(FILE_NAME)).on('all', function (event, name) {
+	//Directory to monitor for changes
+	let monitorDir = path.dirname(args[args.length - 1]);
+	console.log(`Watching for changes in "${monitorDir}"`);
+
+	//Update all the clients when the directory updates
+	choikdar.watch(monitorDir).on('all', function (event, name) {
 		getRenderedData((err, data) => {
 			socketIo.sockets.emit('updated', data);
 			console.error(err);
 		});
 	});
 
+	//When a new client connects, render and send the file
 	socketIo.sockets.on('connection', function (socket) {
 		getRenderedData((err, data) => {
 			socket.emit('updated', data);
