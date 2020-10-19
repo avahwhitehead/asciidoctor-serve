@@ -40,6 +40,8 @@ let args = process.argv.slice(2);
 //A temporary file to hold the rendered PDF
 let PDF_NAME = null;
 
+let PDF_SERVE_COMMAND = null;
+
 //Check whether to render to PDF
 const compileToPdf = (args[0].toLowerCase() === "-pdf");
 if (compileToPdf) {
@@ -47,8 +49,25 @@ if (compileToPdf) {
 	args = args.slice(1);
 	//Temporary file path
 	PDF_NAME = temp.path({suffix: '.pdf'});
+
+	//Check if the user provided a custom PDF viewer
+	let pdfViewer = "evince";
+	if (args.length >= 1 && args[0].toLowerCase() === "--viewer") {
+		//Check that there are enough arguments provided
+		if (args.length < 2) {
+			console.error("ERROR:\t'--viewer' needs an argument");
+			process.exit(1);
+		}
+		//Use the next argument as the PDF viewer name
+		pdfViewer = args[1];
+		//Remove these arguments from the list
+		args = args.slice(2);
+	}
+	//Build the serve command
+	PDF_SERVE_COMMAND = `${pdfViewer} "${PDF_NAME}"`;
+
 	//Output the location
-	console.log(`Serving as PDF in ${PDF_NAME}`);
+	console.log(`Serving as PDF with command:\n\t${PDF_SERVE_COMMAND}`);
 }
 
 //Check that at least one command line argument was provided
@@ -158,7 +177,7 @@ if (!compileToPdf) {
 } else {
 	//Update all the clients when the directory updates
 	onWatchTrigger = () => getRenderedData((err, data) => {
-		exec(`evince ${PDF_NAME}`);
+		exec(PDF_SERVE_COMMAND);
 		console.log(data);
 		console.error(err);
 	});
