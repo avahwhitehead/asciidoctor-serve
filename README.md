@@ -1,7 +1,7 @@
 # Asciidoctor-serve
 
-This is a simple Node.js web-server which uses [asciidoctor][asciidoctor] to provide a live rendered view of
-[AsciiDoc][asciidoc] files in the web browser.
+This is a simple Node.js server which uses [asciidoctor][asciidoctor] to provide a live rendered view of
+[AsciiDoc][asciidoc] files either in your web browser, or in a PDF viewer.
 
 The web server monitors the directory containing the asciidoc file.
 If any of the files there change, the file is re-rendered and broadcast to all connected devices.
@@ -23,6 +23,9 @@ The rendering is done through asciidoctor's command line program as it allows fo
     
         I also have my own [installation guide][asciidoc-gist] which is less detailed, but covers adding
         bibliography and PDF support.
+        
+    - A PDF viewer (required only for serving to PDFs).
+    The default is [Evince PDF][evince], but any should work as long as it has a command line interface.
 
 1. Clone the repository
     
@@ -91,7 +94,15 @@ The rendering is done through asciidoctor's command line program as it allows fo
     asciidoctor-serve -r asciidoctor-bibliography <FILE NAME> 
     ```
 
-1. Open your browser, and go to one of the URLs the program gives you (default is http://localhost:7000).
+   If you want to serve to a PDF instead, add `-pdf` as the **first** argument.
+   To use a PDF viewer other than evince, add `--viewer "<VIEWER COMMAND>"` after `-pdf`.
+   For example:
+   
+   - `asciidoctor-serve -pdf -r asciidoctor-bibliography <FILE NAME>`
+   - `asciidoctor-serve -pdf --viewer xreader -r asciidoctor-bibliography <FILE NAME>`
+   - `asciidoctor-serve -pdf --viewer "xreader -f" -r asciidoctor-bibliography <FILE NAME>`
+   
+1. (HTML server only) Open your browser, and go to one of the URLs the program gives you (default is http://localhost:7000).
 
     You can also view the rendered version from any other device on your network with your IP instead of `localhost`
     (this is also given to you by the program).
@@ -113,6 +124,7 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 [asciidoctor-install]:  https://asciidoctor.org/docs/user-manual/#install-using-gem
 [asciidoctor]:          https://asciidoctor.org
 [bibliography]:         https://github.com/riboseinc/asciidoctor-bibliography
+[evince]:               https://help.gnome.org/users/evince/stable/index.html.en
 [git]:                  https://git-scm.com/
 [n]:                    https://www.npmjs.com/package/n
 [node-npm]:             https://nodejs.org/en/
