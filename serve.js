@@ -165,7 +165,7 @@ if (!compileToPdf) {
 		//Update all the clients when the directory updates
 		onWatchTrigger = () => getRenderedData((err, data) => {
 			socketIo.sockets.emit('updated', data);
-			console.error(err);
+			if (err) console.error(err);
 		});
 
 		//When a new client connects, render and send the file
@@ -178,8 +178,8 @@ if (!compileToPdf) {
 	//Update all the clients when the directory updates
 	onWatchTrigger = () => getRenderedData((err, data) => {
 		exec(PDF_SERVE_COMMAND);
-		console.log(data);
-		console.error(err);
+		if (data) console.log(data);
+		if (err) console.error(err);
 	});
 
 	onWatchTrigger();
