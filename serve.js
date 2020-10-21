@@ -162,6 +162,16 @@ if (!compileToPdf) {
 		<body id="body"></body>`)
 		});
 
+		//Return additional resources
+		app.get('*', (req, res) => {
+			//Get the absolute path to the file
+			let p = path.resolve(path.join('.', req.path));
+			//Show the absolute path
+			console.log(`Resource requested: "${p}"`);
+			//Return the file, if it exists
+			res.sendFile(p);
+		});
+
 		//Update all the clients when the directory updates
 		onWatchTrigger = () => getRenderedData((err, data) => {
 			socketIo.sockets.emit('updated', data);
