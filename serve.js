@@ -37,10 +37,29 @@ function getAllIps() {
 
 //Build the command line argument parser
 const program = new Command.Command()
+	.name("asciidoctor-serve")
+	.usage("[options] [asciidoctor options]")
 	.allowUnknownOption()
 	.option('-pdf', "Whether to serve a PDF viewer instead of a web server")
 	.option('-v, --viewer <viewer>', "The command to start up the PDF viewer (requires `-pdf`)", "evince")
 	.option('--refresh', "If the PDF viewer does not refresh automatically when the document is changed (requires `-pdf`)");
+
+program.on('--help', () => {
+	console.log('');
+	console.log(`[asciidoctor options] is any option string (except '-o') accepted by asciidoctor. You can view these with "asciidoctor --help"`);
+	console.log('');
+	console.log('Example calls:');
+	console.log('    $ `asciidoctor-serve document.adoc`');
+	console.log('        Render the document `document.adoc` in your web browser.');
+	console.log('    $ `asciidoctor-serve -r asciidoctor-bibliography document.adoc`');
+	console.log('        Render the document in your web browser with bibliography support.');
+	console.log('    $ `asciidoctor-serve -pdf document.adoc`');
+	console.log('        Render the document `document.adoc` as a PDF in the Evince viewer.');
+	console.log('    $ `asciidoctor-serve -pdf --viewer=xreader document.adoc`');
+	console.log('        Render the document `document.adoc` as a PDF in the XReader viewer.');
+	console.log('    $ `asciidoctor-serve -pdf --viewer="xreader -f" document.adoc`');
+	console.log('        Render the document `document.adoc` as a PDF in the XReader viewer in fullscreen mode.');
+})
 
 //Parse the arguments
 program.parse(process.argv);
@@ -62,7 +81,8 @@ const viewerNeedsRefresh = !!program.refresh;
 
 //Check that at least one command line argument was provided
 if (args.length === 0) {
-	console.error("ERROR:\tNo arguments provided");
+	console.error("ERROR:\tNo asciidoctor arguments provided");
+	program.outputHelp();
 	process.exit(1);
 }
 
