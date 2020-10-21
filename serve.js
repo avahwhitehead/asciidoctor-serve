@@ -1,5 +1,6 @@
 #!/usr/local/bin/node
 import choikdar from "chokidar";
+import Command from "commander";
 import express from "express";
 import listen from "socket.io";
 import moment from "moment";
@@ -34,41 +35,26 @@ function getAllIps() {
 
 // ================
 
-//Remove `node` and script name from arguments
-let args = process.argv.slice(2);
+//Build the command line argument parser
+const program = new Command.Command()
+	.allowUnknownOption()
+	.option('-pdf', "Whether to serve a PDF viewer instead of a web server")
+	.option('-v, --viewer <viewer>', "The command to start up the PDF viewer (requires `-pdf`)", "evince");
+
+//Parse the arguments
+program.parse(process.argv);
+
+//Get the remaining arguments to pass to `asciidoctor` later
+let args = program.args;
 
 //A temporary file to hold the rendered PDF
-let PDF_NAME = null;
+const PDF_NAME = temp.path({suffix: '.pdf'});
 
-let PDF_SERVE_COMMAND = null;
+//Build the serve command
+let PDF_SERVE_COMMAND = `${program.viewer} "${PDF_NAME}"`;
 
-//Check whether to render to PDF
-const compileToPdf = (args[0].toLowerCase() === "-pdf");
-if (compileToPdf) {
-	//Remove the argument from the list
-	args = args.slice(1);
-	//Temporary file path
-	PDF_NAME = temp.path({suffix: '.pdf'});
-
-	//Check if the user provided a custom PDF viewer
-	let pdfViewer = "evince";
-	if (args.length >= 1 && args[0].toLowerCase() === "--viewer") {
-		//Check that there are enough arguments provided
-		if (args.length < 2) {
-			console.error("ERROR:\t'--viewer' needs an argument");
-			process.exit(1);
-		}
-		//Use the next argument as the PDF viewer name
-		pdfViewer = args[1];
-		//Remove these arguments from the list
-		args = args.slice(2);
-	}
-	//Build the serve command
-	PDF_SERVE_COMMAND = `${pdfViewer} "${PDF_NAME}"`;
-
-	//Output the location
-	console.log(`Serving as PDF with command:\n\t${PDF_SERVE_COMMAND}`);
-}
+//Check whether to render to PDF instead of HTML
+const compileToPdf = program.Pdf;
 
 //Check that at least one command line argument was provided
 if (args.length === 0) {
@@ -83,6 +69,7 @@ if ((i = args.indexOf("-o")) >= 0 || (i = args.indexOf("--out-file")) >= 0) {
 }
 
 // ================
+
 //Hold the command to render the file
 let COMPILE_COMMAND;
 if (compileToPdf) {
@@ -185,6 +172,8 @@ if (!compileToPdf) {
 		})
 	});
 } else {
+	console.log(`Serving as PDF with command:\n\t${PDF_SERVE_COMMAND}`);
+
 	//Update all the clients when the directory updates
 	onWatchTrigger = () => getRenderedData((err, data) => {
 		exec(PDF_SERVE_COMMAND);
