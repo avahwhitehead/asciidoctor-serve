@@ -39,7 +39,8 @@ function getAllIps() {
 const program = new Command.Command()
 	.allowUnknownOption()
 	.option('-pdf', "Whether to serve a PDF viewer instead of a web server")
-	.option('-v, --viewer <viewer>', "The command to start up the PDF viewer (requires `-pdf`)", "evince");
+	.option('-v, --viewer <viewer>', "The command to start up the PDF viewer (requires `-pdf`)", "evince")
+	.option('--refresh', "If the PDF viewer does not refresh automatically when the document is changed (requires `-pdf`)");
 
 //Parse the arguments
 program.parse(process.argv);
@@ -54,7 +55,10 @@ const PDF_NAME = temp.path({suffix: '.pdf'});
 let PDF_SERVE_COMMAND = `${program.viewer} "${PDF_NAME}"`;
 
 //Check whether to render to PDF instead of HTML
-const compileToPdf = program.Pdf;
+const compileToPdf = !!program.Pdf;
+
+//Whether the PDF viewer needs to be manually refreshed
+const viewerNeedsRefresh = !!program.refresh;
 
 //Check that at least one command line argument was provided
 if (args.length === 0) {
@@ -174,14 +178,23 @@ if (!compileToPdf) {
 } else {
 	console.log(`Serving as PDF with command:\n\t${PDF_SERVE_COMMAND}`);
 
-	//Update all the clients when the directory updates
+	//Update the viewer when the directory changes
 	onWatchTrigger = () => getRenderedData((err, data) => {
-		exec(PDF_SERVE_COMMAND);
+		//Only run the command again if the PDF viewer needs manual refreshing
+		if (viewerNeedsRefresh) exec(PDF_SERVE_COMMAND);
+		//Display outputs and errors
 		if (data) console.log(data);
 		if (err) console.error(err);
 	});
 
-	onWatchTrigger();
+	//Run when the server starts
+	getRenderedData((err, data) => {
+		//Open the PDF viewer
+		exec(PDF_SERVE_COMMAND);
+		//Display outputs and errors
+		if (data) console.log(data);
+		if (err) console.error(err);
+	})
 }
 
 //Directory to monitor for changes
