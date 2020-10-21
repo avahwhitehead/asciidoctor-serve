@@ -191,6 +191,6 @@ console.log(`Watching for changes in "${monitorDir}"`);
 
 //Watch the directory for changes
 choikdar.watch(monitorDir).on('change', (event) => {
-	console.log(`CHANGE DETECTED:\t${event}}`);
+	console.log(`CHANGE DETECTED:\t${event}`);
 	onWatchTrigger();
 });
