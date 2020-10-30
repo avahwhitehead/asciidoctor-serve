@@ -42,6 +42,7 @@ const program = new Command.Command()
 	.allowUnknownOption()
 	.option('-pdf', "Whether to serve a PDF viewer instead of a web server")
 	.option('-v, --viewer <viewer>', "The command to start up the PDF viewer (requires `-pdf`)", "evince")
+	.option('-o, --out-file <file>', "The file to render into (requires `-pdf`)")
 	.option('--refresh', "If the PDF viewer does not refresh automatically when the document is changed (requires `-pdf`)");
 
 program.on('--help', () => {
@@ -67,8 +68,9 @@ program.parse(process.argv);
 //Get the remaining arguments to pass to `asciidoctor` later
 let args = program.args;
 
-//A temporary file to hold the rendered PDF
-const PDF_NAME = temp.path({suffix: '.pdf'});
+//If an output file was specified in the arguments, use that to hold the rendered PDF.
+//Otherwise use a new temporary file.
+const PDF_NAME = program.outFile || temp.path({suffix: '.pdf'});
 
 //Build the serve command
 let PDF_SERVE_COMMAND = `${program.viewer} "${PDF_NAME}"`;
@@ -84,12 +86,6 @@ if (args.length === 0) {
 	console.error("ERROR:\tNo asciidoctor arguments provided");
 	program.outputHelp();
 	process.exit(1);
-}
-
-//If an output file was specified in the arguments, remove it
-let i;
-if ((i = args.indexOf("-o")) >= 0 || (i = args.indexOf("--out-file")) >= 0) {
-	args = args.splice(i, 2);
 }
 
 // ================
@@ -222,7 +218,7 @@ let monitorDir = path.dirname(args[args.length - 1]);
 console.log(`Watching for changes in "${monitorDir}"`);
 
 //Watch the directory for changes
-choikdar.watch(monitorDir).on('change', (event) => {
+choikdar.watch(monitorDir, { ignored: PDF_NAME }).on('change', (event) => {
 	console.log(`CHANGE DETECTED:\t${event}`);
 	onWatchTrigger();
 });

@@ -8,7 +8,7 @@ If any of the files there change, the file is re-rendered and broadcast to all c
 
 The rendering is done through asciidoctor's command line program as it allows for better user control.
 
-For commands and usuage examples please see `asciidoctor-serve --help`.
+For commands and usage examples please see `asciidoctor-serve --help`.
 
 # Install/Upgrade/Remove
 
