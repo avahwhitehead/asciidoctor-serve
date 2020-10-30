@@ -1,5 +1,6 @@
 #!/usr/local/bin/node
 import choikdar from "chokidar";
+import Command from "commander";
 import express from "express";
 import listen from "socket.io";
 import moment from "moment";
@@ -34,45 +35,54 @@ function getAllIps() {
 
 // ================
 
-//Remove `node` and script name from arguments
-let args = process.argv.slice(2);
+//Build the command line argument parser
+const program = new Command.Command()
+	.name("asciidoctor-serve")
+	.usage("[options] [asciidoctor options]")
+	.allowUnknownOption()
+	.option('-pdf', "Whether to serve a PDF viewer instead of a web server")
+	.option('-v, --viewer <viewer>', "The command to start up the PDF viewer (requires `-pdf`)", "evince")
+	.option('--refresh', "If the PDF viewer does not refresh automatically when the document is changed (requires `-pdf`)");
+
+program.on('--help', () => {
+	console.log('');
+	console.log(`[asciidoctor options] is any option string (except '-o') accepted by asciidoctor. You can view these with "asciidoctor --help"`);
+	console.log('');
+	console.log('Example calls:');
+	console.log('    $ `asciidoctor-serve document.adoc`');
+	console.log('        Render the document `document.adoc` in your web browser.');
+	console.log('    $ `asciidoctor-serve -r asciidoctor-bibliography document.adoc`');
+	console.log('        Render the document in your web browser with bibliography support.');
+	console.log('    $ `asciidoctor-serve -pdf document.adoc`');
+	console.log('        Render the document `document.adoc` as a PDF in the Evince viewer.');
+	console.log('    $ `asciidoctor-serve -pdf --viewer=xreader document.adoc`');
+	console.log('        Render the document `document.adoc` as a PDF in the XReader viewer.');
+	console.log('    $ `asciidoctor-serve -pdf --viewer="xreader -f" document.adoc`');
+	console.log('        Render the document `document.adoc` as a PDF in the XReader viewer in fullscreen mode.');
+})
+
+//Parse the arguments
+program.parse(process.argv);
+
+//Get the remaining arguments to pass to `asciidoctor` later
+let args = program.args;
 
 //A temporary file to hold the rendered PDF
-let PDF_NAME = null;
+const PDF_NAME = temp.path({suffix: '.pdf'});
 
-let PDF_SERVE_COMMAND = null;
+//Build the serve command
+let PDF_SERVE_COMMAND = `${program.viewer} "${PDF_NAME}"`;
 
-//Check whether to render to PDF
-const compileToPdf = (args[0].toLowerCase() === "-pdf");
-if (compileToPdf) {
-	//Remove the argument from the list
-	args = args.slice(1);
-	//Temporary file path
-	PDF_NAME = temp.path({suffix: '.pdf'});
+//Check whether to render to PDF instead of HTML
+const compileToPdf = !!program.Pdf;
 
-	//Check if the user provided a custom PDF viewer
-	let pdfViewer = "evince";
-	if (args.length >= 1 && args[0].toLowerCase() === "--viewer") {
-		//Check that there are enough arguments provided
-		if (args.length < 2) {
-			console.error("ERROR:\t'--viewer' needs an argument");
-			process.exit(1);
-		}
-		//Use the next argument as the PDF viewer name
-		pdfViewer = args[1];
-		//Remove these arguments from the list
-		args = args.slice(2);
-	}
-	//Build the serve command
-	PDF_SERVE_COMMAND = `${pdfViewer} "${PDF_NAME}"`;
-
-	//Output the location
-	console.log(`Serving as PDF with command:\n\t${PDF_SERVE_COMMAND}`);
-}
+//Whether the PDF viewer needs to be manually refreshed
+const viewerNeedsRefresh = !!program.refresh;
 
 //Check that at least one command line argument was provided
 if (args.length === 0) {
-	console.error("ERROR:\tNo arguments provided");
+	console.error("ERROR:\tNo asciidoctor arguments provided");
+	program.outputHelp();
 	process.exit(1);
 }
 
@@ -83,6 +93,7 @@ if ((i = args.indexOf("-o")) >= 0 || (i = args.indexOf("--out-file")) >= 0) {
 }
 
 // ================
+
 //Hold the command to render the file
 let COMPILE_COMMAND;
 if (compileToPdf) {
@@ -162,10 +173,20 @@ if (!compileToPdf) {
 		<body id="body"></body>`)
 		});
 
+		//Return additional resources
+		app.get('*', (req, res) => {
+			//Get the absolute path to the file
+			let p = path.resolve(path.join('.', req.path));
+			//Show the absolute path
+			console.log(`Resource requested: "${p}"`);
+			//Return the file, if it exists
+			res.sendFile(p);
+		});
+
 		//Update all the clients when the directory updates
 		onWatchTrigger = () => getRenderedData((err, data) => {
 			socketIo.sockets.emit('updated', data);
-			console.error(err);
+			if (err) console.error(err);
 		});
 
 		//When a new client connects, render and send the file
@@ -175,14 +196,25 @@ if (!compileToPdf) {
 		})
 	});
 } else {
-	//Update all the clients when the directory updates
+	console.log(`Serving as PDF with command:\n\t${PDF_SERVE_COMMAND}`);
+
+	//Update the viewer when the directory changes
 	onWatchTrigger = () => getRenderedData((err, data) => {
-		exec(PDF_SERVE_COMMAND);
-		console.log(data);
-		console.error(err);
+		//Only run the command again if the PDF viewer needs manual refreshing
+		if (viewerNeedsRefresh) exec(PDF_SERVE_COMMAND);
+		//Display outputs and errors
+		if (data) console.log(data);
+		if (err) console.error(err);
 	});
 
-	onWatchTrigger();
+	//Run when the server starts
+	getRenderedData((err, data) => {
+		//Open the PDF viewer
+		exec(PDF_SERVE_COMMAND);
+		//Display outputs and errors
+		if (data) console.log(data);
+		if (err) console.error(err);
+	})
 }
 
 //Directory to monitor for changes
@@ -191,6 +223,6 @@ console.log(`Watching for changes in "${monitorDir}"`);
 
 //Watch the directory for changes
 choikdar.watch(monitorDir).on('change', (event) => {
-	console.log(`CHANGE DETECTED:\t${event}}`);
+	console.log(`CHANGE DETECTED:\t${event}`);
 	onWatchTrigger();
 });

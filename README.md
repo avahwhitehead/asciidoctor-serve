@@ -8,6 +8,8 @@ If any of the files there change, the file is re-rendered and broadcast to all c
 
 The rendering is done through asciidoctor's command line program as it allows for better user control.
 
+For commands and usuage examples please see `asciidoctor-serve --help`.
+
 # Install/Upgrade/Remove
 
 ## Installing
@@ -94,13 +96,9 @@ The rendering is done through asciidoctor's command line program as it allows fo
     asciidoctor-serve -r asciidoctor-bibliography <FILE NAME> 
     ```
 
-   If you want to serve to a PDF instead, add `-pdf` as the **first** argument.
-   To use a PDF viewer other than evince, add `--viewer "<VIEWER COMMAND>"` after `-pdf`.
-   For example:
-   
-   - `asciidoctor-serve -pdf -r asciidoctor-bibliography <FILE NAME>`
-   - `asciidoctor-serve -pdf --viewer xreader -r asciidoctor-bibliography <FILE NAME>`
-   - `asciidoctor-serve -pdf --viewer "xreader -f" -r asciidoctor-bibliography <FILE NAME>`
+   If you want to serve to a PDF viewer instead, add `-pdf` as an argument.
+   To use a PDF viewer other than evince, add the argument `--viewer="<VIEWER COMMAND>"` (or `-v "<VIEWER COMMAND>"`).
+   See the help menu (`asciidoctor-serve --help`) for more commands and usage examples.
    
 1. (HTML server only) Open your browser, and go to one of the URLs the program gives you (default is http://localhost:7000).
 
