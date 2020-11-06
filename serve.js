@@ -1,5 +1,5 @@
 #!/usr/local/bin/node
-import choikdar from "chokidar";
+import chokidar from "chokidar";
 import Command from "commander";
 import express from "express";
 import listen from "socket.io";
@@ -219,7 +219,7 @@ let monitorDir = path.dirname(args[args.length - 1]);
 console.log(`Watching for changes in "${monitorDir}"`);
 
 //Watch the directory for changes
-choikdar.watch(monitorDir, { ignored: PDF_NAME }).on('change', (event) => {
+chokidar.watch(monitorDir, { ignored: PDF_NAME }).on('change', (event) => {
 	console.log(`CHANGE DETECTED:\t${event}`);
 	onWatchTrigger();
 });
