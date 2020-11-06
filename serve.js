@@ -1,5 +1,5 @@
 #!/usr/local/bin/node
-import choikdar from "chokidar";
+import chokidar from "chokidar";
 import Command from "commander";
 import express from "express";
 import listen from "socket.io";
@@ -38,12 +38,14 @@ function getAllIps() {
 //Build the command line argument parser
 const program = new Command.Command()
 	.name("asciidoctor-serve")
+	.version("1.1.0")
 	.usage("[options] [asciidoctor options]")
 	.allowUnknownOption()
 	.option('-pdf', "Whether to serve a PDF viewer instead of a web server")
 	.option('-v, --viewer <viewer>', "The command to start up the PDF viewer (requires `-pdf`)", "evince")
 	.option('-o, --out-file <file>', "The file to render into (requires `-pdf`)")
-	.option('--refresh', "If the PDF viewer does not refresh automatically when the document is changed (requires `-pdf`)");
+	.option('--refresh', "If the PDF viewer does not refresh automatically when the document is changed (requires `-pdf`)")
+	.option('-i, --ignore <files...>', "A list of files/folders to ignore (not watch for changes). You must follow this argument with `--` if there are not any more arguments before the document name.");
 
 program.on('--help', () => {
 	console.log('');
@@ -60,6 +62,13 @@ program.on('--help', () => {
 	console.log('        Render the document `document.adoc` as a PDF in the XReader viewer.');
 	console.log('    $ `asciidoctor-serve -pdf --viewer="xreader -f" document.adoc`');
 	console.log('        Render the document `document.adoc` as a PDF in the XReader viewer in fullscreen mode.');
+	//--ignore examples
+	console.log('    $ `asciidoctor-serve --ignore temp/ -- document.adoc`');
+	console.log('        Render the document `document.adoc` ignoring the `temp/` directory');
+	console.log('    $ `asciidoctor-serve --ignore temp/ *.png -- document.adoc`');
+	console.log('        Render the document `document.adoc` ignoring the `temp/` directory and any files in the current directory ending in `.png`.');
+	console.log('    $ `asciidoctor-serve --ignore temp/ -r asciidoctor-bibliography document.adoc`');
+	console.log('        Render the document `document.adoc` using the biblioraphy plugin, ignoring the `temp/` directory.');
 })
 
 //Parse the arguments
@@ -68,9 +77,14 @@ program.parse(process.argv);
 //Get the remaining arguments to pass to `asciidoctor` later
 let args = program.args;
 
+//Get a list of the folders to not watch.
+let ignoreFiles = program.ignore || [];
+
 //If an output file was specified in the arguments, use that to hold the rendered PDF.
 //Otherwise use a new temporary file.
 const PDF_NAME = program.outFile || temp.path({suffix: '.pdf'});
+//Add this path to the files to ignore
+ignoreFiles.push(PDF_NAME);
 
 //Build the serve command
 let PDF_SERVE_COMMAND = `${program.viewer} "${PDF_NAME}"`;
@@ -214,11 +228,14 @@ if (!compileToPdf) {
 }
 
 //Directory to monitor for changes
-let monitorDir = path.dirname(args[args.length - 1]);
+let monitorDir = path.resolve(path.dirname(args[args.length - 1]));
 console.log(`Watching for changes in "${monitorDir}"`);
 
+//Map file names to their absolute paths so chokidar works properly
+ignoreFiles = ignoreFiles.map(value => path.resolve(value));
+
 //Watch the directory for changes
-choikdar.watch(monitorDir, { ignored: PDF_NAME }).on('change', (event) => {
+chokidar.watch(monitorDir, { ignored: ignoreFiles }).on('change', (event) => {
 	console.log(`CHANGE DETECTED:\t${event}`);
 	onWatchTrigger();
 });
