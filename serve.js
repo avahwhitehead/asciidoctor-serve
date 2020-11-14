@@ -187,8 +187,6 @@ if (!compileToPdf) {
 		app.get('*', (req, res) => {
 			//Get the absolute path to the file
 			let p = path.resolve(path.join('.', req.path));
-			//Show the absolute path
-			console.log(`Resource requested: "${p}"`);
 			//Return the file, if it exists
 			res.sendFile(p);
 		});
