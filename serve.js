@@ -38,7 +38,7 @@ function getAllIps() {
 //Build the command line argument parser
 const program = new Command.Command()
 	.name("asciidoctor-serve")
-	.version("1.1.0")
+	.version("1.1.1")
 	.usage("[options] [asciidoctor options]")
 	.allowUnknownOption()
 	.option('-pdf', "Whether to serve a PDF viewer instead of a web server")
