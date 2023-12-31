@@ -1,4 +1,4 @@
-#!/usr/local/bin/node
+#!/usr/bin/env node
 import chokidar from "chokidar";
 import { Command } from "commander";
 import express from "express";
