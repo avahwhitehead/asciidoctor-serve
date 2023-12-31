@@ -1,8 +1,8 @@
 #!/usr/local/bin/node
 import chokidar from "chokidar";
-import Command from "commander";
+import { Command } from "commander";
 import express from "express";
-import listen from "socket.io";
+import { Socket as listen } from "socket.io";
 import moment from "moment";
 import os from "os";
 import path from "path";
@@ -36,7 +36,7 @@ function getAllIps() {
 // ================
 
 //Build the command line argument parser
-const program = new Command.Command()
+const program = new Command()
 	.name("asciidoctor-serve")
 	.version("1.1.1")
 	.usage("[options] [asciidoctor options]")
